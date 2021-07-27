@@ -23,7 +23,7 @@ app.layout = dbc.Container([
         # Header
         dbc.Row([
             dbc.Card([
-                dbc.CardHeader([html.H1('~Quant Predictions~')]),
+                dbc.CardHeader([html.H1('Quant Crypto Forecasting')]),
             ], className='mx-3 mt-5')
         ], style={'width': '105'}),
 
@@ -35,13 +35,16 @@ app.layout = dbc.Container([
                         html.H5('Input Crypto Code: '),
                     ]),
                     dbc.CardBody([
-                        dbc.Input(
-                            placeholder='bitcoin', bs_size='md', className='mb-3', id='code'
-                        )
+                        dbc.InputGroup([
+                            dbc.Input(placeholder='bitcoin', id='code'),
+                            dbc.InputGroupAddon(
+                                dbc.Button('Submit', color='dark', id='code-submit', n_clicks=0), addon_type='append'
+                            )
+                        ])
                     ]),
                 ], className='mt-2')
             ], width=12)
-        ]),
+        ], className='my-5'),
 
         # Start Date
         dbc.Row([
@@ -59,45 +62,33 @@ app.layout = dbc.Container([
                     ]),
                 ]),
             ]),
-        ]),
+        ], className='my-5'),
 
         # Stock Price and Indicators button
         dbc.Row([
             dbc.Col([
                 dbc.Card([
-                    dbc.CardBody([
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Button('Price', color='dark',
+                                       style={'width': '121px'}),
+                            dbc.Button('Indicators', color='dark'),
 
-                    ])
+                        ], justify='around', style={'margin-top': '10px', 'margin-bottom': '15px'}),
+
+                        dbc.Row([
+                            dbc.InputGroup([
+                                dbc.Input(id='days', placeholder='60',
+                                          type='number'),
+                                dbc.InputGroupAddon(
+                                    dbc.Button('Forecast', color='dark', id='forecast-submit', n_clicks=0), addon_type='append'
+                                )
+                            ])
+                        ], justify='center')
+                    ], width=11, className='ml-2 my-2')
                 ])
-            ], width=6),
-
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardBody([
-
-                    ])
-                ])
-            ], width=6),
-        ]),
-
-        # Forecast input and button
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardBody([
-
-                    ])
-                ])
-            ], width=6),
-
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardBody([
-
-                    ])
-                ])
-            ], width=6),
-        ]),
+            ], width=12),
+        ], justify='center', className='my-5'),
 
     ], width=3),
 
