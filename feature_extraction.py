@@ -1,16 +1,21 @@
 import pandas as pd
 
 
-def calculateRSI(prices_data, n=14):
+def calculateRSI(prices_data, n=14, today_price=None):
     """Calculate the Relative Strength Index of an asset.
 
     Args:
         prices_data (pandas dataframe object): prices data
         n (int, optional): number of . Defaults to 14.
+        today_price(int, optional): today's price to predict future RSI. Defaults to None
     Return:
         rsi (pandas series object): relative strength index
     """
     price = prices_data['prices']
+    
+    # Append today's date if used for prediction
+    price = price.append(pd.Series({price.size: today_price}))
+
     delta = price.diff()
     delta = delta[1:]
 
@@ -29,7 +34,7 @@ def calculateRSI(prices_data, n=14):
 
 
 def calculateMACD(prices_data):
-    """Calculate the MACD of EMA12 and EMA26 of an asset
+    """Calculate the MACD of EMA15 and EMA30 of an asset
 
     Args:
         prices_data (dataframe): prices data
@@ -38,12 +43,12 @@ def calculateMACD(prices_data):
         macd (pandas series object): macd of the asset
         macd_signal (pandas series object): macd signal of the asset
     """
-    ema12 = pd.Series(prices_data['prices'].ewm(
-        span=12, min_periods=12).mean())
-    ema26 = pd.Series(prices_data['prices'].ewm(
-        span=26, min_periods=26).mean())
+    ema15 = pd.Series(prices_data['prices'].ewm(
+        span=15, min_periods=15).mean())
+    ema30 = pd.Series(prices_data['prices'].ewm(
+        span=30, min_periods=30).mean())
 
-    macd = pd.Series(ema12 - ema26)
+    macd = pd.Series(ema15 - ema30)
     macd_signal = pd.Series(macd.ewm(span=9, min_periods=9).mean())
 
     return macd, macd_signal
