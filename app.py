@@ -13,91 +13,115 @@ import pandas as pd
 import requests
 import calendar
 
+from fetch_data import *
+from model import quantPredictPrices
+
 # Bootstrap themes by Ann: https://hellodash.pythonanywhere.com/theme_explorer
 app = dash.Dash("Quant Predictions", external_stylesheets=[dbc.themes.LUX])
 
-# Layout and Components of the app
-app.layout = dbc.Container([
-    # Dashboard
-    dbc.Col([
-        # Header
-        dbc.Row([
-            dbc.Card([
-                dbc.CardHeader([html.H1('Quant Crypto Forecasting')]),
-            ], className='mx-3 mt-5')
-        ], style={'width': '105'}),
 
-        # Input
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H5('Input Crypto Code: '),
-                    ]),
-                    dbc.CardBody([
-                        dbc.InputGroup([
-                            dbc.Input(placeholder='bitcoin', id='code'),
-                            dbc.InputGroupAddon(
-                                dbc.Button('Submit', color='dark', id='code-submit', n_clicks=0), addon_type='append'
-                            )
-                        ])
-                    ]),
-                ], className='mt-2')
-            ], width=12)
-        ], className='my-5'),
+# the style arguments for the sidebar. We use position:fixed and a fixed width
+SIDEBAR_STYLE = {
+    "position": "fixed",
+    "top": 0,
+    "left": 0,
+    "bottom": 0,
+    "width": "25rem",
+    "padding": "2rem 1rem",
+    "background-color": "#f8f9fa",
+}
 
-        # Start Date
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.CardHeader([
-                        html.H5('Start Date'),
-                    ]),
-                    dbc.CardBody([
-                        dcc.DatePickerSingle(
-                            id='start-date',
-                            date=date(2021, 1, 1),
-                            className='mt-2'
-                        ),
-                    ]),
-                ]),
+# the styles for the main content position it to the right of the sidebar and
+# add some padding.
+CONTENT_STYLE = {
+    "margin-left": "27rem",
+    "margin-right": "2rem",
+    "padding": "2rem 1rem",
+}
+
+
+sidebar = html.Div(
+    [
+        html.H2("Quant Crypto", className="display-5"),
+        html.H2("Forecasting", className="display-5"),
+        html.Hr(),
+        html.P(
+            "A quant prediction app that uses machine learning to predict future prices of crypto currency.", className="lead"
+        ),
+
+        # Input the code
+        dbc.Card([
+            dbc.CardHeader([
+                html.H5('Input Crypto Code: '),
             ]),
-        ], className='my-5'),
-
-        # Stock Price and Indicators button
-        dbc.Row([
-            dbc.Col([
-                dbc.Card([
-                    dbc.Col([
-                        dbc.Row([
-                            dbc.Button('Price', color='dark',
-                                       style={'width': '121px'}),
-                            dbc.Button('Indicators', color='dark'),
-
-                        ], justify='around', style={'margin-top': '10px', 'margin-bottom': '15px'}),
-
-                        dbc.Row([
-                            dbc.InputGroup([
-                                dbc.Input(id='days', placeholder='60',
-                                          type='number'),
-                                dbc.InputGroupAddon(
-                                    dbc.Button('Forecast', color='dark', id='forecast-submit', n_clicks=0), addon_type='append'
-                                )
-                            ])
-                        ], justify='center')
-                    ], width=11, className='ml-2 my-2')
+            dbc.CardBody([
+                dbc.InputGroup([
+                    dbc.Input(placeholder='bitcoin', id='code'),
+                    dbc.InputGroupAddon(
+                        dbc.Button('Submit', color='dark', id='code-submit', n_clicks=0), addon_type='append'
+                    )
                 ])
-            ], width=12),
-        ], justify='center', className='my-5'),
+            ]),
+        ], className='mt-2'),
 
-    ], width=3),
+        dbc.Card([
+            dbc.CardHeader([
+                html.H5('Number of days to forecast: '),
+            ]),
+            dbc.CardBody([
+                dbc.InputGroup([
+                    dbc.Input(placeholder='1 - 30', id='days', type='number'),
+                    dbc.InputGroupAddon(
+                        dbc.Button('Submit', color='dark', id='forecast-submit', n_clicks=0), addon_type='append'
+                    )
+                ])
+            ]),
+        ], className='mt-2'),
+    ],
+    style=SIDEBAR_STYLE,
+)
 
-    # Charts and predictions
-    dbc.Col([
 
-    ], width=8)
-], fluid=True)
+content = html.Div(
+    [
+        dbc.Row([
+            dcc.Graph(id='prices-graph'),
+        ]), 
 
+        dbc.Row([
+            dcc.Graph(id='indicators-graph'),
+        ]), 
+    ],
+    id='page_content', style=CONTENT_STYLE)
+
+# Cache divs
+prices_cache = html.Div([], id='prices-data-cache', hidden=True)
+ohlc_cache = html.Div([], id='ohlc-data-cache', hidden=True)
+
+# app.layout = html.Div([dcc.Location(id='url'), sidebar, content])
+app.layout = html.Div([sidebar, content])
+
+# First goal -> call back banao for both the charts -> prices and moving average + candles
+@app.callback(
+    Output('prices-graph', 'figure'),
+    Output('prices-data-cache', 'children'),
+    Output('ohlc-data-cache', 'children'),
+    Input('code', 'value'),
+    Input('code-submit', 'n_clicks'),
+)
+def updateOriginalGraph(id_, clicks):
+    # Fetch cleaned data
+    prices_data = fetchPriceData(id=id_)
+    ohlc_data = fetchCandleData(id=id_)
+
+    # Cache the data to store into a div so that we dont have to the API again
+    prices_cache_json = prices_data.to_json()
+    ohlc_cache_json = ohlc_data.to_json()
+
+    # Now display the graph
+
+def updatePredictedGraph():
+    pass
 
 if __name__ == '__main__':
     app.run_server(debug=True)
