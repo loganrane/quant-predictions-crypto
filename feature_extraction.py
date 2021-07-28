@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def calculateRSI(prices_data, n=14):
     """Calculate the Relative Strength Index of an asset.
 
@@ -46,3 +47,50 @@ def calculateMACD(prices_data):
     macd_signal = pd.Series(macd.ewm(span=9, min_periods=9).mean())
 
     return macd, macd_signal
+
+
+def extractAll(data):
+    """Generate most important technical indicators for an asset
+    Including -
+    EMA9 - exponential moving average for 9 ticks
+    SMA5 - simple moving average for 5 ticks
+    SMA10 - simple moving average for 10 ticks
+    SMA15 - simple moving average for 15 ticks
+    SMA30 - simple moving average for 30 ticks
+    RSI - Relative Strength Index
+    MACD - Moving Average Convergence Divergence
+    MACD Signal
+
+    Args:
+        data (pandas dataframe object): prices data
+
+    Returns:
+        pandas dataframe object: prices data with all the indicators
+    """
+    prices_data = data.copy()
+    # Add moving averages
+    prices_data['EMA_9'] = prices_data['prices'].ewm(9).mean().shift()
+    prices_data['SMA_5'] = prices_data['prices'].rolling(5).mean().shift()
+    prices_data['SMA_10'] = prices_data['prices'].rolling(10).mean().shift()
+    prices_data['SMA_15'] = prices_data['prices'].rolling(15).mean().shift()
+    prices_data['SMA_30'] = prices_data['prices'].rolling(30).mean().shift()
+
+    # RSI
+    prices_data['RSI'] = calculateRSI(prices_data).fillna(0)
+
+    # MACD
+    macd, macd_signal = calculateMACD(prices_data)
+    prices_data['MACD'] = macd
+    prices_data['MACD_signal'] = macd_signal
+
+    # Shift label(y) by one value to predict the next day using today's data (technical indicators)
+    prices_data['prices'] = prices_data['prices'].shift(-1)
+    # Drop invalid samples - the samples where moving averages exceed the required window
+    prices_data = prices_data.iloc[33:]
+    prices_data = prices_data[:-1]  # since we did shifting by one
+    prices_data.index = range(len(prices_data))  # update indexes
+
+    drop_cols = ['market_caps', 'total_volumes', 'time', 'date']
+    prices_data = prices_data.drop(drop_cols, axis=1)
+
+    return prices_data
