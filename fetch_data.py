@@ -72,8 +72,8 @@ def fetchPriceData(id='bitcoin', vs_currency='usd'):
     query = dt.now() - datetime.timedelta(days=75)
     today = dt.now()
 
-    unix_query = time.mktime(query.timetuple())
-    unix_today = time.mktime(today.timetuple())
+    unix_query = convertUTCtoUnix(query)
+    unix_today = convertUTCtoUnix(today)
 
     data = cg.get_coin_market_chart_range_by_id(id='bitcoin', vs_currency='usd',
                                                 from_timestamp=unix_query, to_timestamp=unix_today)
