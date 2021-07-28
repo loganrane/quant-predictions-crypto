@@ -8,6 +8,7 @@ import pandas as pd
 # CoinGeckoAPI wrapper -https://github.com/man-c/pycoingecko
 cg = CoinGeckoAPI()
 
+
 def convertUnixToUTC(data):
     """Convert UNIX time format to UTC time format"""
     # Check if returned data has miliseconds
@@ -22,6 +23,11 @@ def convertUTCtoUnix(data):
     return time.mktime(data.timetuple())
 
 
+def convertStrToDateTime(data):
+    """Convert string to pandas datetime objects"""
+    return pd.to_datetime(data)
+
+
 def fetchCandleData(id='bitcoin', vs_currency='usd', days=30):
     """Generate the OHLC data for a single coin.
        (1/7/14/30/90/180/365/max)
@@ -34,7 +40,7 @@ def fetchCandleData(id='bitcoin', vs_currency='usd', days=30):
         vs_currency (str, optional): Against usd/eur/inr. Defaults to 'usd'.
         days (int, optional): Historical data for number of days. Defaults to 30.
     Returns:
-        df(pandas dataframe): OHLC data
+        df(pandas dataframe): OHLC data 4-hours
     """
 
     data = cg.get_coin_ohlc_by_id(id=id, vs_currency=vs_currency, days=days)
@@ -42,17 +48,20 @@ def fetchCandleData(id='bitcoin', vs_currency='usd', days=30):
 
     # Convert timestamp to UTC
     df['time'] = df['time'].apply(convertUnixToUTC)
+    df['time'] = df['time'].apply(convertStrToDateTime)
+
+    # Make daily data
+    df['date'] = df['time'].dt.date
 
     return df
 
 
-def fetchPriceData(start_date, id='bitcoin', vs_currency='usd'):
+def fetchPriceData(id='bitcoin', vs_currency='usd'):
     """Fetch the price and market cap data of a coin
         1 day from query time = 5 minute interval data
         1 - 90 days from query time = hourly data
         above 90 days from query time = daily data (00:00 UTC)
     Args:
-        start_date (datetime): Start date of the query
         id (str, optional): Coin ID. Defaults to 'bitcoin'.
         vs_currency (str, optional): Against usd/eur/inr. Defaults to 'usd'.
 
@@ -60,8 +69,8 @@ def fetchPriceData(start_date, id='bitcoin', vs_currency='usd'):
         df(pandas dataframe): Price data
     """
     # Set date time (from -> to)
-    query = start_date
-    today = datetime.datetime.now()
+    query = dt.now() - datetime.timedelta(days=75)
+    today = dt.now()
 
     unix_query = time.mktime(query.timetuple())
     unix_today = time.mktime(today.timetuple())
@@ -82,6 +91,9 @@ def fetchPriceData(start_date, id='bitcoin', vs_currency='usd'):
     # Add timestamp to dataframe and convert to UTC format
     df['time'] = time_stamp
     df['time'] = df['time'].apply(convertUnixToUTC)
+    df['time'] = df['time'].apply(convertStrToDateTime)
+
+    # Daily data
+    df['date'] = df['time'].dt.date
 
     return df
-
