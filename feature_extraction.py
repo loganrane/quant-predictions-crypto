@@ -14,7 +14,8 @@ def calculateRSI(prices_data, n=14, today_price=None):
     price = prices_data['prices']
     
     # Append today's date if used for prediction
-    price = price.append(pd.Series({price.size: today_price}))
+    if today_price is not None:
+        price = price.append(pd.Series({price.size: today_price}))
 
     delta = price.diff()
     delta = delta[1:]

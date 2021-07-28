@@ -34,7 +34,7 @@ def indicatorsGraph(prices_data):
         prices_data (pandas dataframe object): prices data
 
     Returns:
-        plotly figure object: candlestick data"""
+        plotly figure object: technical indicators"""
     times = prices_data['time']
     indicators = extractAll(prices_data)
 
@@ -60,5 +60,28 @@ def indicatorsGraph(prices_data):
     fig.update_layout(margin=dict(l=10, r=10, t=50, b=10),
                       width=900, height=300,
                       title='Price data with technical indicators for 30 days')
+
+    return fig
+
+
+def predictionGraph(prices_data, predicted_data):
+    """Plot graph for predicted data
+
+    Args:
+        prices_data (pandas dataframe object): prices data
+        predicted_data (pandas dataframe object): predicted prices
+    Returns:
+        plotly figure object: graph"""
+    prices_data = prices_data.iloc[-(24*30):, :]
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=prices_data['time'], y=prices_data['prices'], name='Real', marker_color='LightSkyBlue'))
+    fig.add_trace(go.Scatter(
+        x=predicted_data['time'], y=predicted_data['prices'], name='Predicted', marker_color='MediumPurple'))
+
+    fig.update_layout(margin=dict(l=10, r=10, t=50, b=10),
+                      width=900, height=300,
+                      title='Prediction of future prices')
 
     return fig

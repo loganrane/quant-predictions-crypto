@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 
+import datetime
 import xgboost as xgb
 from feature_extraction import *
 
@@ -14,8 +15,8 @@ def trainModel(prices_data):
     Returns:
         model: XGBRegressor model trained on live data
     """
-    X_train = clean.drop(['prices'], axis=1)
-    y_train = clean['prices'].copy()
+    X_train = prices_data.drop(['prices'], axis=1)
+    y_train = prices_data['prices'].copy()
 
     # Make the model on given parameters
     parameters = {'gamma': 0.01, 'learning_rate': 0.05,
@@ -77,7 +78,7 @@ def quantPredictPrices(prices_data, num_days):
                                                sma5, sma10, sma15, sma30, rsi, macd, macd_signal]
         predictions.loc[len(predictions)] = [price, ema9,
                                              sma5, sma10, sma15, sma30, rsi, macd, macd_signal]
-        future_times.append(latest_time + datetime.timedelta(hours=4 * i))
+        future_times.append(latest_time + datetime.timedelta(hours=i))
 
     # Add date and time
     predictions['time'] = pd.Series(future_times)
