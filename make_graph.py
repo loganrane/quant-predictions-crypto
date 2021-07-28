@@ -58,7 +58,7 @@ def indicatorsGraph(prices_data):
 
     fig.update(layout_xaxis_rangeslider_visible=False)
     fig.update_layout(margin=dict(l=10, r=10, t=50, b=10),
-                      width=900, height=300,
+                      width=1010, height=300,
                       title='Price data with technical indicators for 30 days')
 
     return fig
@@ -81,7 +81,7 @@ def predictionGraph(prices_data, predicted_data):
         x=predicted_data['time'], y=predicted_data['prices'], name='Predicted', marker_color='MediumPurple'))
 
     fig.update_layout(margin=dict(l=10, r=10, t=50, b=10),
-                      width=900, height=300,
+                      width=1010, height=300,
                       title='Prediction of future prices')
 
     return fig

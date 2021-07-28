@@ -3,6 +3,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 from dash.dependencies import Output, Input, State
+from dash.exceptions import PreventUpdate
 
 import plotly.express as px
 import plotly.graph_objects as go
@@ -15,6 +16,7 @@ import calendar
 
 from fetch_data import *
 from model import quantPredictPrices
+from make_graph import *
 
 # Bootstrap themes by Ann: https://hellodash.pythonanywhere.com/theme_explorer
 app = dash.Dash("Quant Predictions", external_stylesheets=[dbc.themes.LUX])
@@ -56,7 +58,8 @@ sidebar = html.Div(
             ]),
             dbc.CardBody([
                 dbc.InputGroup([
-                    dbc.Input(placeholder='bitcoin', id='code'),
+                    dbc.Input(placeholder='bitcoin',
+                              id='code', value='bitcoin'),
                     dbc.InputGroupAddon(
                         dbc.Button('Submit', color='dark', id='code-submit', n_clicks=0), addon_type='append'
                     )
@@ -70,7 +73,8 @@ sidebar = html.Div(
             ]),
             dbc.CardBody([
                 dbc.InputGroup([
-                    dbc.Input(placeholder='1 - 30', id='days', type='number'),
+                    dbc.Input(placeholder='1 - 30', id='days',
+                              type='number', value=5),
                     dbc.InputGroupAddon(
                         dbc.Button('Submit', color='dark', id='forecast-submit', n_clicks=0), addon_type='append'
                     )
@@ -86,42 +90,65 @@ content = html.Div(
     [
         dbc.Row([
             dcc.Graph(id='prices-graph'),
-        ]), 
+        ]),
 
         dbc.Row([
             dcc.Graph(id='indicators-graph'),
-        ]), 
+        ]),
+
+        # Cache divs
+        html.Div([], id='prices-data-cache', hidden=True),
+        html.Div([], id='ohlc-data-cache', hidden=True),
+        html.Div([], id='print')
     ],
     id='page_content', style=CONTENT_STYLE)
 
-# Cache divs
-prices_cache = html.Div([], id='prices-data-cache', hidden=True)
-ohlc_cache = html.Div([], id='ohlc-data-cache', hidden=True)
 
 # app.layout = html.Div([dcc.Location(id='url'), sidebar, content])
 app.layout = html.Div([sidebar, content])
 
-# First goal -> call back banao for both the charts -> prices and moving average + candles
+
 @app.callback(
-    Output('prices-graph', 'figure'),
-    Output('prices-data-cache', 'children'),
-    Output('ohlc-data-cache', 'children'),
-    Input('code', 'value'),
-    Input('code-submit', 'n_clicks'),
+    [Output('prices-graph', 'figure'), Output('indicators-graph', 'figure')],
+    [Input('code-submit', 'n_clicks'), Input('forecast-submit', 'n_clicks')],
+    [State('code', 'value'), State('days', 'value')],
 )
-def updateOriginalGraph(id_, clicks):
+def updateOriginalGraph(code, forecast, id_, days):
+    ctx = dash.callback_context
+
+    if not ctx.triggered:
+        raise PreventUpdate
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
     # Fetch cleaned data
     prices_data = fetchPriceData(id=id_)
     ohlc_data = fetchCandleData(id=id_)
 
-    # Cache the data to store into a div so that we dont have to the API again
-    prices_cache_json = prices_data.to_json()
-    ohlc_cache_json = ohlc_data.to_json()
+    if button_id == 'code-submit':
+        graphA, graphB = updateOriginalGraph(prices_data, ohlc_data)
+    elif button_id == 'forecast-submit':
+        graphA, graphB = updateForecastGraph(prices_data, days)
 
+    return [graphA, graphB]
+
+
+def updateOriginalGraph(prices_data, ohlc_data):
     # Now display the graph
+    candle = candleStickGraph(ohlc_data)
+    indicators = indicatorsGraph(prices_data)
 
-def updatePredictedGraph():
-    pass
+    return [candle, indicators]
+
+
+def updateForecastGraph(prices_data, n_days):
+    predicted_data = quantPredictPrices(prices_data, n_days)
+
+    pred = predictionGraph(prices_data, predicted_data)
+    indi = indicatorsGraph(prices_data)
+
+    return [pred, indi]
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
