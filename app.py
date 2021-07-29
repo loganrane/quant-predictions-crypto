@@ -20,7 +20,7 @@ from make_graph import *
 
 # Bootstrap themes by Ann: https://hellodash.pythonanywhere.com/theme_explorer
 app = dash.Dash("Quant Predictions", external_stylesheets=[dbc.themes.LUX])
-
+server = app.server
 
 # the style arguments for the sidebar. We use position:fixed and a fixed width
 SIDEBAR_STYLE = {
